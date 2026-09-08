@@ -59,11 +59,18 @@ def normalize_symbols(input):
     else:
         symbols = str(input).split(",")
 
-    symbols = list(dict.fromkeys(
-        s.strip().upper()
-        for s in symbols
-        if s.strip()
-    ))
+    cleaned_symbols = []
+
+    for s in symbols:
+        s = s.strip() 
+
+        if s:
+            s = s.upper()
+
+            if s not in cleaned_symbols:
+                cleaned_symbols.append(s)
+
+    symbols = cleaned_symbols
 
     if not symbols:
         raise HTTPException(400, "No symbols provided")
