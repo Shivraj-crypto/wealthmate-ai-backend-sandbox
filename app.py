@@ -1,39 +1,40 @@
 import os
 import re
 import time
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from yahooquery import Ticker
 
+
 app = FastAPI()
 
+
 # CORS
+
 origins = os.getenv("CORS_ORIGINS")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=(
-        [x.strip() for x in origins.split(",") if x.strip()]
-        if origins
-        else ["*"]
-    ),
+    allow_origins=["*"] if not origins else origins.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
 # ----------------------
 # In-memory cache
 # ----------------------
 
-cache = {}  # key -> {"value": ..., "expires_at": ...}
+cache = {}
 
 
 def get_cache(key):
-    item = cache.get(key)
-
-    if not item:
+    if key not in cache:
         return None
+
+    item = cache[key]
 
     if time.time() > item["expires_at"]:
         del cache[key]
@@ -42,10 +43,10 @@ def get_cache(key):
     return item["value"]
 
 
-def set_cache(key, value, ttl=5):
+def set_cache(key, value):
     cache[key] = {
-        "value": value, 
-        "expires_at": time.time() + ttl,
+        "value": value,
+        "expires_at": time.time() + 5
     }
 
 
@@ -53,59 +54,57 @@ def set_cache(key, value, ttl=5):
 # Utilities
 # ----------------------
 
-def normalize_symbols(input):
-    if isinstance(input, list):
-        symbols = input
-    else:
-        symbols = str(input).split(",")
+def normalize_symbols(symbols):
+
+    if isinstance(symbols, str):
+        symbols = symbols.split(",")
 
     cleaned_symbols = []
 
-    for s in symbols:
-        s = s.strip() 
+    for symbol in symbols:
+        symbol = symbol.strip()
 
-        if s:
-            s = s.upper()
+        if symbol:
+            symbol = symbol.upper()
 
-            if s not in cleaned_symbols:
-                cleaned_symbols.append(s)
+            if symbol not in cleaned_symbols:
+                cleaned_symbols.append(symbol)
 
-    symbols = cleaned_symbols
-
-    if not symbols:
+    if not cleaned_symbols:
         raise HTTPException(400, "No symbols provided")
 
-    if len(symbols) > 25:
+    if len(cleaned_symbols) > 25:
         raise HTTPException(400, "Too many symbols (max 25)")
 
-    for symbol in symbols:
-        if not re.match(r"^[A-Z.\-]+$", symbol):
+    for symbol in cleaned_symbols:
+        if not re.match(r"^[A-Z.-]+$", symbol):
             raise HTTPException(
                 400,
                 f"Invalid symbol format: {symbol}"
             )
 
-    return symbols
+    return cleaned_symbols
 
 
-def format_quote(q):
+def format_quote(quote):
+
     return {
-        "symbol": q.get("symbol"),
-        "shortName": q.get("shortName"),
-        "regularMarketPrice": q.get("regularMarketPrice"),
-        "regularMarketChangePercent": q.get(
+        "symbol": quote.get("symbol"),
+        "shortName": quote.get("shortName"),
+        "regularMarketPrice": quote.get("regularMarketPrice"),
+        "regularMarketChangePercent": quote.get(
             "regularMarketChangePercent"
         ),
-        "currency": q.get("currency"),
-        "marketState": q.get("marketState"),
+        "currency": quote.get("currency"),
+        "marketState": quote.get("marketState"),
     }
 
 
-async def get_formatted_quotes(symbols):
+def get_formatted_quotes(symbols):
+
     symbols = normalize_symbols(symbols)
 
     ticker = Ticker(symbols)
-
     data = ticker.price
 
     if not isinstance(data, dict):
@@ -116,7 +115,7 @@ async def get_formatted_quotes(symbols):
     for symbol in symbols:
         quote = data.get(symbol)
 
-        if quote and isinstance(quote, dict):
+        if quote:
             quote["symbol"] = symbol
             results.append(format_quote(quote))
 
@@ -128,7 +127,7 @@ async def get_formatted_quotes(symbols):
 # ----------------------
 
 @app.get("/stock/{symbol}")
-async def get_stock(symbol: str):
+def get_stock(symbol: str):
 
     symbol = normalize_symbols(symbol)[0]
 
@@ -137,22 +136,20 @@ async def get_stock(symbol: str):
     cached = get_cache(cache_key)
 
     if cached:
-        return cached[0]
+        return cached
 
-    result = await get_formatted_quotes([symbol])
+    result = get_formatted_quotes([symbol])
 
     if not result:
         raise HTTPException(404, "Symbol not found")
 
-    set_cache(cache_key, result, 5)
+    set_cache(cache_key, result[0])
 
     return result[0]
 
 
 @app.get("/stocks")
-async def get_stocks(
-    symbols: str = Query(...)
-):
+def get_stocks(symbols: str = Query(...)):
 
     symbols = normalize_symbols(symbols)
 
@@ -163,15 +160,16 @@ async def get_stocks(
     if cached:
         return cached
 
-    result = await get_formatted_quotes(symbols)
+    result = get_formatted_quotes(symbols)
 
-    set_cache(cache_key, result, 5)
+    set_cache(cache_key, result)
 
     return result
 
 
 @app.get("/health")
-async def health():
+def health():
+
     return {"ok": True}
 
 
