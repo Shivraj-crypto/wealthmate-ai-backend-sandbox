@@ -6,13 +6,20 @@ class Stock(Base):
     __tablename__ = "stocks"
 
     id = Column(Integer, primary_key=True)
-    symbol = Column(String, unique=True, index=True)
+    symbol = Column(String, unique=True)
     name = Column(String)
-    price = Column(Float)
-    change_percent = Column(Float)
     currency = Column(String)
     market_state = Column(String)
-    updated_at = Column(DateTime)
+
+
+class StockPrice(Base):
+    __tablename__ = "stock_prices"
+
+    id = Column(Integer, primary_key=True)
+    stock_id = Column(Integer, ForeignKey("stocks.id"))
+    price = Column(Float)
+    change_percent = Column(Float)
+    recorded_at = Column(DateTime)
 
 
 
