@@ -5,6 +5,7 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, status, Path
 from ..schemas import *
+from ..database import *
 
 def get_db():
     db = SessionLocal()
@@ -14,6 +15,8 @@ def get_db():
     
     finally:
         db.close()
+
+#dependency-injection for databse
 
 db_dependency_injection = Annotated[Session, Depends(get_db)]
 
