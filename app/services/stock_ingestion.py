@@ -20,7 +20,7 @@ def get_db():
 
 db_dependency_injection = Annotated[Session, Depends(get_db)]
 
-quotes = get_formatted_quotes(["AAPL, GOOL"])
+quotes = get_formatted_quotes(["AAPL", "GOOL"])
 
 def add_to_db(db :db_dependency_injection):
     data = Stock(
