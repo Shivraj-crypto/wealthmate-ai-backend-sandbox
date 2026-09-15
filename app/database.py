@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-POSTGRESQL_DATABASE_URL = 'postgresql://postgres:dragrandom@localhost/TodoApplicationDatabase'
+POSTGRESQL_DATABASE_URL = 'postgresql://postgres:dragrandom@localhost/WealthMateDatabase'
 
 engine = create_engine(POSTGRESQL_DATABASE_URL)
 
