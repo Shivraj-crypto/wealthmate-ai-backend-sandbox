@@ -1,36 +1,65 @@
-from app.services.yahoo_service import get_formatted_quotes
-from ..database import SessionLocal
-from ..models import Stock
-from typing import Annotated
-from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, HTTPException, status, Path
-from ..schemas import *
-from ..database import *
+from datetime import datetime, timezone
 
-def get_db():
-    db = SessionLocal()
+from sqlalchemy.orm import Session
+
+from ..database import SessionLocal
+from ..models import Stock, StockPrice
+from .yahoo_service import get_formatted_quotes
+
+
+def ingest_stocks():
+    # Get data from Yahoo Finance
+    quotes = get_formatted_quotes(["AAPL", "GOOG", "MSFT"])
+
+    if not quotes:
+        print("No quotes received from Yahoo Finance")
+        return
+
+    db: Session = SessionLocal()
 
     try:
-        yield db
-    
+        for quote in quotes:
+
+            # Check if stock already exists
+            stock = (
+                db.query(Stock)
+                .filter(Stock.symbol == quote["symbol"])
+                .first()
+            )
+
+            # If stock doesn't exist, create it
+            if stock is None:
+                stock = Stock(
+                    symbol=quote["symbol"],
+                    name=quote["shortName"],
+                    currency=quote["currency"],
+                    market_state=quote["marketState"],
+                )
+
+                db.add(stock)
+                db.flush()
+
+            # Create historical price record
+            stock_price = StockPrice(
+                stock_id=stock.id,
+                price=quote["regularMarketPrice"],
+                change_percent=quote["regularMarketChangePercent"],
+                recorded_at=datetime.now(timezone.utc),
+            )
+
+            db.add(stock_price)
+
+        db.commit()
+
+        print(f"Successfully ingested {len(quotes)} stocks")
+
+    except Exception:
+        db.rollback()
+        raise
+
     finally:
         db.close()
 
-#dependency-injection for databse
 
-db_dependency_injection = Annotated[Session, Depends(get_db)]
-
-quotes = get_formatted_quotes(["AAPL", "GOOL"])
-
-def add_to_db(db :db_dependency_injection):
-    data = Stock(
-        symbol=quotes[0]["symbol"],
-        name=quotes[0]["shortName"],
-        currency=quotes[0]["currency"],
-        market_state=quotes[0]["marketState"]
-    )
-
-    db.add(data)
-    db.commit()
-    db.refresh(data)
-
+if __name__ == "__main__":
+    ingest_stocks()
