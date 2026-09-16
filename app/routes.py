@@ -25,9 +25,12 @@ class StockTicker(BaseModel):
 db_dependency_injection = Annotated[Session, Depends(get_db)]
 
 
-@router.get("/stocks_price")
+@router.get("/stocks_price", status_code=status.HTTP_200_OK)
 async def get_current_stock_price(db : db_dependency_injection, input : StockTicker):
     stock = db.query(Stock).filter(Stock.symbol == input.symbol.upper()).first()
+
+    if stock is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="NO DATA")
 
     stock_data = db.query(StockPrice).filter(stock.id == StockPrice.stock_id).order_by(StockPrice.recorded_at.desc()).first()
 
