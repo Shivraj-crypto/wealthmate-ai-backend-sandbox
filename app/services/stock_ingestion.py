@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
+from yahooquery import Ticker
 
 from ..database import SessionLocal
 from ..models import Stock, StockPrice
