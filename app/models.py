@@ -11,12 +11,15 @@ class Stock(Base):
     currency = Column(String, nullable=False)
     market_state = Column(String)
 
+    current_price = Column(Float, nullable=False)
+    current_change_percent = Column(Float)
+    price_updated_at = Column(DateTime, nullable=False)
 
-class StockPrice(Base):
-    __tablename__ = "stock_prices"
+
+class HistoricalPrice(Base):
+    __tablename__ = "historical_prices"
 
     id = Column(Integer, primary_key=True)
     stock_id = Column(Integer, ForeignKey("stocks.id"), nullable=False, index=True)
     price = Column(Float, nullable=False)
-    change_percent = Column(Float)
     recorded_at = Column(DateTime, nullable=False, index=True)
