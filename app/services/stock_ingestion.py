@@ -8,6 +8,8 @@ from ..models import Stock, StockPrice
 from .yahoo_service import get_formatted_quotes
 
 
+
+
 def ingest_stocks():
     # Get data from Yahoo Finance
     quotes = get_formatted_quotes(["AAPL", "GOOG", "MSFT"])

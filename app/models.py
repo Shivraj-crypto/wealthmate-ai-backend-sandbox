@@ -23,3 +23,4 @@ class HistoricalPrice(Base):
     stock_id = Column(Integer, ForeignKey("stocks.id"), nullable=False, index=True)
     price = Column(Float, nullable=False)
     recorded_at = Column(DateTime, nullable=False, index=True)
+    interval = Column(String, nullable=False)
