@@ -1,5 +1,6 @@
 from ..database import engine, Base
-from ..models import Stock, StockPrice
+from ..models import Stock, HistoricalPrice
+
 
 Base.metadata.create_all(bind=engine)
 
