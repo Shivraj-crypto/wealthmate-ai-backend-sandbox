@@ -4,7 +4,7 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from .models import Stock, HistoricalPrice
-from .schemas import StockPriceResponse
+from .schemas import StockResponse
 
 
 router = APIRouter()
@@ -26,7 +26,7 @@ class StockTicker(BaseModel):
 db_dependency_injection = Annotated[Session, Depends(get_db)]
 
 
-@router.get("/stocks_price", status_code=status.HTTP_200_OK, response_model=StockPriceResponse)
+@router.get("/stocks_price", status_code=status.HTTP_200_OK, response_model=StockResponse)
 
 async def get_current_stock_price(db: db_dependency_injection, symbol: str):
     stock = db.query(Stock).filter(Stock.symbol == symbol.upper()).first()
