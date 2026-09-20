@@ -40,12 +40,30 @@ def ingest_stocks():
                 )
 
                 db.add(stock)
+                db.flush()
 
             # If stock already exists, update current price
             else:
                 stock.current_price = quote["regularMarketPrice"]
                 stock.current_change_percent = quote["regularMarketChangePercent"]
                 stock.price_updated_at = datetime.now(timezone.utc)
+
+            # Get historical price data
+            historical_prices = get_historical_prices(
+                quote["symbol"],
+                period="1d",
+                interval="5m"
+            )
+
+            for historical_price in historical_prices:
+                data = HistoricalPrice(
+                    stock_id=stock.id,
+                    price=historical_price["price"],
+                    recorded_at=historical_price["recorded_at"],
+                    interval=historical_price["interval"]
+                )
+
+                db.add(data)
 
         db.commit()
 

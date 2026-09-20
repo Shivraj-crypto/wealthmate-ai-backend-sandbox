@@ -89,7 +89,7 @@ def get_historical_prices(symbol, period="1d", interval="5m"):
     for _, row in data.iterrows():
         results.append({
             "symbol": symbol,
-            "price": row["close"],
+            "price": float(row["close"]),
             "recorded_at": row.name[1],
             "interval": interval
         })
