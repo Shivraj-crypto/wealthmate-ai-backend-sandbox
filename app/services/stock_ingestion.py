@@ -1,13 +1,10 @@
 from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
-from yahooquery import Ticker
 
 from ..database import SessionLocal
-from ..models import Stock, StockPrice
+from ..models import Stock
 from .yahoo_service import get_formatted_quotes
-
-
 
 
 def ingest_stocks():
@@ -37,20 +34,18 @@ def ingest_stocks():
                     name=quote["shortName"],
                     currency=quote["currency"],
                     market_state=quote["marketState"],
+                    current_price=quote["regularMarketPrice"],
+                    current_change_percent=quote["regularMarketChangePercent"],
+                    price_updated_at=datetime.now(timezone.utc),
                 )
 
                 db.add(stock)
-                db.flush()
 
-            # Create historical price record
-            stock_price = StockPrice(
-                stock_id=stock.id,
-                price=quote["regularMarketPrice"],
-                change_percent=quote["regularMarketChangePercent"],
-                recorded_at=datetime.now(timezone.utc),
-            )
-
-            db.add(stock_price)
+            # If stock already exists, update current price
+            else:
+                stock.current_price = quote["regularMarketPrice"]
+                stock.current_change_percent = quote["regularMarketChangePercent"]
+                stock.price_updated_at = datetime.now(timezone.utc)
 
         db.commit()
 
