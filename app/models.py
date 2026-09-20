@@ -1,5 +1,6 @@
 from app.database import Base
 from sqlalchemy import Integer, String, Column, ForeignKey, Float, DateTime
+from fastapi import HTTPException
 
 
 class Stock(Base):
