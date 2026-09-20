@@ -71,3 +71,28 @@ def get_formatted_quotes(symbols):
             results.append(format_quote(quote))
 
     return results
+
+def get_historical_prices(symbol, period="1d", interval="5m"):
+
+    ticker = Ticker(symbol)
+
+    data = ticker.history(
+        period=period,
+        interval=interval
+    )
+
+    if data is None or data.empty:
+        return []
+
+    results = []
+
+    for _, row in data.iterrows():
+        results.append({
+            "symbol": symbol,
+            "price": row["close"],
+            "recorded_at": row.name[1],
+            "interval": interval
+        })
+
+    return results
+
