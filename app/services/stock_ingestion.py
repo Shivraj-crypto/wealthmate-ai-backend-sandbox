@@ -3,8 +3,8 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from ..database import SessionLocal
-from ..models import Stock
-from .yahoo_service import get_formatted_quotes
+from ..models import Stock, HistoricalPrice
+from .yahoo_service import get_formatted_quotes, get_historical_prices
 
 
 def ingest_stocks():
