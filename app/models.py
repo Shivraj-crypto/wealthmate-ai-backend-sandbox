@@ -1,5 +1,5 @@
 from app.database import Base
-from sqlalchemy import Integer, String, Column, ForeignKey, Float, DateTime
+from sqlalchemy import Integer, String, Column, ForeignKey, Float, DateTime, UniqueConstraint
 from fastapi import HTTPException
 
 
@@ -25,3 +25,12 @@ class HistoricalPrice(Base):
     price = Column(Float, nullable=False)
     recorded_at = Column(DateTime, nullable=False, index=True)
     interval = Column(String, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "stock_id",
+            "recorded_at",
+            "interval",
+            name="unique_stock_historical_price"
+        ),
+    )
