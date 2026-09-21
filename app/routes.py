@@ -48,7 +48,7 @@ async def get_stock_history(db: db_dependency_injection, symbol: str, interval: 
     if stock is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="NO DATA"
+            detail="ERROR: NO DATA"
         )
 
     history = (
@@ -64,7 +64,7 @@ async def get_stock_history(db: db_dependency_injection, symbol: str, interval: 
     if not history:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="NO HISTORICAL DATA"
+            detail="ERROR : NO HISTORICAL DATA"
         )
 
     return history
