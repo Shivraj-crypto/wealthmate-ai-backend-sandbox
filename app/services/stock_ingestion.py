@@ -56,14 +56,26 @@ def ingest_stocks():
             )
 
             for historical_price in historical_prices:
-                data = HistoricalPrice(
-                    stock_id=stock.id,
-                    price=historical_price["price"],
-                    recorded_at=historical_price["recorded_at"],
-                    interval=historical_price["interval"]
+
+                existing = (
+                    db.query(HistoricalPrice)
+                    .filter(
+                        HistoricalPrice.stock_id == stock.id,
+                        HistoricalPrice.recorded_at == historical_price["recorded_at"],
+                        HistoricalPrice.interval == historical_price["interval"]
+                    )
+                    .first()
                 )
 
-                db.add(data)
+                if existing is None:
+                    data = HistoricalPrice(
+                        stock_id=stock.id,
+                        price=historical_price["price"],
+                        recorded_at=historical_price["recorded_at"],
+                        interval=historical_price["interval"]
+                    )
+
+                    db.add(data)
 
         db.commit()
 
