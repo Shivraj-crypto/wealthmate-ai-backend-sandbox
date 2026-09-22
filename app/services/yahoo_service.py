@@ -3,6 +3,7 @@ import re
 from fastapi import HTTPException
 from yahooquery import Ticker
 from ..models import Stock
+from ..database import *
 
 
 def normalize_symbols(symbols):
