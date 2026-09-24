@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from yahooquery import Ticker
 from ..models import Stock
 from ..database import *
+from datetime import datetime, timezone
 
 
 def normalize_symbols(symbols):
@@ -88,10 +89,28 @@ def get_historical_prices(symbol, period="1d", interval="5m"):
     results = []
 
     for _, row in data.iterrows():
+
+        recorded_at = row.name[1]
+
+        if hasattr(recorded_at, "to_pydatetime"):
+            recorded_at = recorded_at.to_pydatetime()
+
+        if isinstance(recorded_at, datetime):
+            if recorded_at.tzinfo is None:
+                recorded_at = recorded_at.replace(
+                    tzinfo=timezone.utc
+                )
+        else:
+            recorded_at = datetime.combine(
+                recorded_at,
+                datetime.min.time(),
+                tzinfo=timezone.utc
+            )
+
         results.append({
             "symbol": symbol,
             "price": float(row["close"]),
-            "recorded_at": row.name[1],
+            "recorded_at": recorded_at,
             "interval": interval
         })
 
