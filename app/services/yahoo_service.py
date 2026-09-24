@@ -97,3 +97,12 @@ def get_historical_prices(symbol, period="1d", interval="5m"):
 
     return results
 
+
+if __name__ == "__main__":
+    data = get_historical_prices(
+        "AAPL",
+        period="5d",
+        interval="1h"
+    )
+
+    print(data[:10])

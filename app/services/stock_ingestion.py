@@ -48,12 +48,21 @@ def ingest_stocks():
                 stock.current_change_percent = quote["regularMarketChangePercent"]
                 stock.price_updated_at = datetime.now(timezone.utc)
 
-            # Get historical price data
-            historical_prices = get_historical_prices(
+            # Get 1D historical price data
+            historical_prices_1d = get_historical_prices(
                 quote["symbol"],
                 period="1d",
                 interval="5m"
             )
+
+            # Get 1W historical price data
+            historical_prices_1w = get_historical_prices(
+                quote["symbol"],
+                period="5d",
+                interval="1h"
+            )
+
+            historical_prices = historical_prices_1d + historical_prices_1w
 
             for historical_price in historical_prices:
 
