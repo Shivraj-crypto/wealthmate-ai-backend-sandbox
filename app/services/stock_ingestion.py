@@ -62,7 +62,18 @@ def ingest_stocks():
                 interval="1h"
             )
 
-            historical_prices = historical_prices_1d + historical_prices_1w
+            # Get 1Y historical price data
+            historical_prices_1y = get_historical_prices(
+                quote["symbol"],
+                period="1y",
+                interval="1d"
+            )
+
+            historical_prices = (
+                historical_prices_1d
+                + historical_prices_1w
+                + historical_prices_1y
+            )
 
             for historical_price in historical_prices:
 
