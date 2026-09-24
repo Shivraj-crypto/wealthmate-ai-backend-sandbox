@@ -99,10 +99,22 @@ def get_historical_prices(symbol, period="1d", interval="5m"):
 
 
 if __name__ == "__main__":
-    data = get_historical_prices(
+    data_3mo = get_historical_prices(
         "AAPL",
-        period="5d",
-        interval="1h"
+        period="3mo",
+        interval="1d"
     )
 
-    print(data[:10])
+    data_1y = get_historical_prices(
+        "AAPL",
+        period="1y",
+        interval="1d"
+    )
+
+    print("3 MONTHS:")
+    print(data_3mo[:5])
+    print("Total:", len(data_3mo))
+
+    print("\n1 YEAR:")
+    print(data_1y[:5])
+    print("Total:", len(data_1y))
