@@ -39,5 +39,84 @@ async def get_current_stock_price(db: db_dependency_injection, symbol: str):
     return stock
 
 
+@router.get("/stocks_history", status_code=status.HTTP_200_OK)
+async def get_stock_history(
+    db: db_dependency_injection,
+    symbol: str,
+    chart_range: str = "1d"
+):
+    stock = (
+        db.query(Stock)
+        .filter(Stock.symbol == symbol.upper())
+        .first()
+    )
 
+    if stock is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="NO DATA"
+        )
+
+    interval_map = {
+        "1d": "5m",
+        "1w": "1h",
+        "1mo": "1d",
+        "1y": "1d",
+        "5y": "1wk"
+    }
+
+    interval = interval_map.get(chart_range)
+
+    if interval is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid range"
+        )
+
+    now = datetime.now(timezone.utc)
+
+    if chart_range == "1d":
+        market_timezone = ZoneInfo("America/New_York")
+        market_now = now.astimezone(market_timezone)
+
+        start_date = market_now.replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0
+        )
+
+        start_time = start_date.astimezone(timezone.utc)
+
+    elif chart_range == "1w":
+        start_time = now - timedelta(days=7)
+
+    elif chart_range == "1mo":
+        start_time = now - timedelta(days=30)
+
+    elif chart_range == "1y":
+        start_time = now - timedelta(days=365)
+
+    else:
+        start_time = now - timedelta(days=365 * 5)
+
+    history = (
+        db.query(HistoricalPrice)
+        .filter(
+            HistoricalPrice.stock_id == stock.id,
+            HistoricalPrice.interval == interval,
+            HistoricalPrice.recorded_at >= start_time,
+            HistoricalPrice.recorded_at <= now
+        )
+        .order_by(HistoricalPrice.recorded_at.asc())
+        .all()
+    )
+
+    if not history:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="NO HISTORICAL DATA"
+        )
+
+    return history
     
