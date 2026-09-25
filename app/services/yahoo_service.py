@@ -118,4 +118,11 @@ def get_historical_prices(symbol, period="1d", interval="5m"):
 
 
 if __name__ == "__main__":
-    pass
+    data = get_historical_prices(
+    "AAPL",
+    period="5y",
+    interval="1wk"
+)
+
+print(data[:5])
+print("Total:", len(data))
