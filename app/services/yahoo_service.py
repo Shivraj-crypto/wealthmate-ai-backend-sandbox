@@ -124,11 +124,6 @@ if __name__ == "__main__":
         interval="1d"
     )
 
-    data_1y = get_historical_prices(
-        "AAPL",
-        period="1y",
-        interval="1d"
-    )
 
     print("3 MONTHS:")
     print(data_3mo[:5])
