@@ -63,8 +63,17 @@ async def get_stock_history(
         "1d": "5m",
         "1w": "1h",
         "1mo": "1d",
+        "3mo": "1d",
         "1y": "1d",
         "5y": "1wk"
+    }
+
+    days_map = {
+        "1w": 7,
+        "1mo": 30,
+        "3mo": 90,
+        "1y": 365,
+        "5y": 365 * 5
     }
 
     interval = interval_map.get(chart_range)
@@ -75,32 +84,37 @@ async def get_stock_history(
             detail="Invalid range"
         )
 
-    now = datetime.now(timezone.utc)
+    latest_time = (
+        db.query(func.max(HistoricalPrice.recorded_at))
+        .filter(
+            HistoricalPrice.stock_id == stock.id,
+            HistoricalPrice.interval == interval
+        )
+        .scalar()
+    )
 
+    if latest_time is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="NO HISTORICAL DATA"
+        )
+
+    # For 1D, return only the latest available trading day
     if chart_range == "1d":
-        market_timezone = ZoneInfo("America/New_York")
-        market_now = now.astimezone(market_timezone)
-
-        start_date = market_now.replace(
+        start_time = latest_time.replace(
             hour=0,
             minute=0,
             second=0,
             microsecond=0
         )
+        end_time = latest_time
 
-        start_time = start_date.astimezone(timezone.utc)
-
-    elif chart_range == "1w":
-        start_time = now - timedelta(days=7)
-
-    elif chart_range == "1mo":
-        start_time = now - timedelta(days=30)
-
-    elif chart_range == "1y":
-        start_time = now - timedelta(days=365)
-
+    # For longer ranges, go backwards from the latest available data
     else:
-        start_time = now - timedelta(days=365 * 5)
+        start_time = latest_time - timedelta(
+            days=days_map[chart_range]
+        )
+        end_time = latest_time
 
     history = (
         db.query(HistoricalPrice)
@@ -108,7 +122,7 @@ async def get_stock_history(
             HistoricalPrice.stock_id == stock.id,
             HistoricalPrice.interval == interval,
             HistoricalPrice.recorded_at >= start_time,
-            HistoricalPrice.recorded_at <= now
+            HistoricalPrice.recorded_at <= end_time
         )
         .order_by(HistoricalPrice.recorded_at.asc())
         .all()
