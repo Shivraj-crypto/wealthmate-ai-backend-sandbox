@@ -7,6 +7,8 @@ from .models import Stock, HistoricalPrice
 from .schemas import StockResponse
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
+from datetime import timedelta
+from sqlalchemy import func
 
 
 router = APIRouter()
