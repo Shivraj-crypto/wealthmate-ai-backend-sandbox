@@ -1,6 +1,5 @@
 from app.database import Base
 from sqlalchemy import Integer, String, Column, ForeignKey, Float, DateTime, UniqueConstraint
-from fastapi import HTTPException
 from sqlalchemy import func
 
 
