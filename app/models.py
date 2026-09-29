@@ -1,6 +1,5 @@
 from app.database import Base
 from sqlalchemy import Integer, String, Column, ForeignKey, Float, DateTime, UniqueConstraint
-from sqlalchemy import func
 
 
 class Stock(Base):
