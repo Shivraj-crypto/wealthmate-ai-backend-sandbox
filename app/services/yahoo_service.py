@@ -2,7 +2,6 @@ import re
 
 from fastapi import HTTPException
 from yahooquery import Ticker
-from ..models import Stock
 from ..database import *
 from datetime import datetime, timezone
 
