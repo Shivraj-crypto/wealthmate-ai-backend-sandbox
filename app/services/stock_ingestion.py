@@ -7,9 +7,11 @@ from ..models import Stock, HistoricalPrice
 from .yahoo_service import get_formatted_quotes, get_historical_prices
 
 
-def ingest_stocks():
-    # Get data from Yahoo Finance
-    quotes = get_formatted_quotes(["AAPL", "GOOG", "MSFT"])
+SYMBOLS = ["AAPL", "GOOG", "MSFT"]
+
+
+def ingest_current_prices():
+    quotes = get_formatted_quotes(SYMBOLS)
 
     if not quotes:
         print("No quotes received from Yahoo Finance")
@@ -20,14 +22,12 @@ def ingest_stocks():
     try:
         for quote in quotes:
 
-            # Check if stock already exists
             stock = (
                 db.query(Stock)
                 .filter(Stock.symbol == quote["symbol"])
                 .first()
             )
 
-            # If stock doesn't exist, create it
             if stock is None:
                 stock = Stock(
                     symbol=quote["symbol"],
@@ -40,35 +40,67 @@ def ingest_stocks():
                 )
 
                 db.add(stock)
-                db.flush()
 
-            # If stock already exists, update current price
             else:
                 stock.current_price = quote["regularMarketPrice"]
                 stock.current_change_percent = quote["regularMarketChangePercent"]
                 stock.price_updated_at = datetime.now(timezone.utc)
 
-            # Get 1D historical price data
+        db.commit()
+
+        print(f"Successfully updated current prices for {len(quotes)} stocks")
+
+    except Exception:
+        db.rollback()
+        raise
+
+    finally:
+        db.close()
+
+
+def ingest_historical_prices():
+    quotes = get_formatted_quotes(SYMBOLS)
+
+    if not quotes:
+        print("No quotes received from Yahoo Finance")
+        return
+
+    db: Session = SessionLocal()
+
+    try:
+        for quote in quotes:
+
+            stock = (
+                db.query(Stock)
+                .filter(Stock.symbol == quote["symbol"])
+                .first()
+            )
+
+            if stock is None:
+                continue
+
+            # 1D → 5m
             historical_prices_1d = get_historical_prices(
                 quote["symbol"],
                 period="1d",
                 interval="5m"
             )
 
-            # Get 1W historical price data
+            # 1W → 1h
             historical_prices_1w = get_historical_prices(
                 quote["symbol"],
                 period="5d",
                 interval="1h"
             )
 
-            # Get 1Y historical price data
+            # 1Y / 3M / 1M → 1d
             historical_prices_1y = get_historical_prices(
                 quote["symbol"],
                 period="1y",
                 interval="1d"
             )
-            # Get 5Y historical price data
+
+            # 5Y → 1wk
             historical_prices_5y = get_historical_prices(
                 quote["symbol"],
                 period="5y",
@@ -106,7 +138,7 @@ def ingest_stocks():
 
         db.commit()
 
-        print(f"Successfully ingested {len(quotes)} stocks")
+        print(f"Successfully updated historical prices for {len(quotes)} stocks")
 
     except Exception:
         db.rollback()
@@ -117,4 +149,4 @@ def ingest_stocks():
 
 
 if __name__ == "__main__":
-    ingest_stocks()
+    ingest_current_prices()
