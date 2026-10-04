@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from yahooquery import Ticker
 from ..database import *
 from datetime import datetime, timezone
+from ..models import Stock, HistoricalPrice
 
 
 def normalize_symbols(symbols):
