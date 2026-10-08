@@ -5,10 +5,7 @@ from sqlalchemy.orm import Session
 from ..database import SessionLocal
 from ..models import Stock, HistoricalPrice
 from .yahoo_service import get_formatted_quotes, get_historical_prices
-from ..services.stock_symbols import get_stock_symbols
-
-
-SYMBOLS = ["AAPL", "GOOG", "MSFT"]
+from .stock_symbols import get_stock_symbols
 
 
 def ingest_current_prices():
@@ -48,7 +45,9 @@ def ingest_current_prices():
 
         db.commit()
 
-        print(f"Successfully updated current prices for {total_updated} stocks")
+        print(
+            f"Successfully updated current prices for {total_updated} stocks"
+        )
 
     except Exception:
         db.rollback()
@@ -59,20 +58,22 @@ def ingest_current_prices():
 
 
 def ingest_historical_prices():
-    quotes = get_formatted_quotes(SYMBOLS)
-
-    if not quotes:
-        print("No quotes received from Yahoo Finance")
-        return
-
     db: Session = SessionLocal()
 
     try:
-        for quote in quotes:
+        symbols = get_stock_symbols(db)
+
+        if not symbols:
+            print("No stocks found in database")
+            return
+
+        total_updated = 0
+
+        for symbol in symbols:
 
             stock = (
                 db.query(Stock)
-                .filter(Stock.symbol == quote["symbol"])
+                .filter(Stock.symbol == symbol)
                 .first()
             )
 
@@ -81,28 +82,28 @@ def ingest_historical_prices():
 
             # Get 1D historical price data
             historical_prices_1d = get_historical_prices(
-                quote["symbol"],
+                symbol,
                 period="1d",
                 interval="5m"
             )
 
             # Get 1W historical price data
             historical_prices_1w = get_historical_prices(
-                quote["symbol"],
+                symbol,
                 period="5d",
                 interval="1h"
             )
 
             # Get 1Y historical price data
             historical_prices_1y = get_historical_prices(
-                quote["symbol"],
+                symbol,
                 period="1y",
                 interval="1d"
             )
 
             # Get 5Y historical price data
             historical_prices_5y = get_historical_prices(
-                quote["symbol"],
+                symbol,
                 period="5y",
                 interval="1wk"
             )
@@ -127,6 +128,7 @@ def ingest_historical_prices():
                 )
 
                 if existing is None:
+
                     data = HistoricalPrice(
                         stock_id=stock.id,
                         price=historical_price["price"],
@@ -135,6 +137,7 @@ def ingest_historical_prices():
                     )
 
                     db.add(data)
+                    total_updated += 1
 
         # Delete historical data older than 5 years
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=365 * 5)
@@ -147,7 +150,9 @@ def ingest_historical_prices():
 
         db.commit()
 
-        print(f"Successfully updated historical prices for {len(quotes)} stocks")
+        print(
+            f"Successfully updated historical prices: {total_updated} new records"
+        )
 
     except Exception:
         db.rollback()
