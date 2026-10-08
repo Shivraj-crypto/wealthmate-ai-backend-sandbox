@@ -12,44 +12,43 @@ SYMBOLS = ["AAPL", "GOOG", "MSFT"]
 
 
 def ingest_current_prices():
-    quotes = get_formatted_quotes(SYMBOLS)
-
-    if not quotes:
-        print("No quotes received from Yahoo Finance")
-        return
-
     db: Session = SessionLocal()
 
     try:
-        for quote in quotes:
+        symbols = get_stock_symbols(db)
 
-            stock = (
-                db.query(Stock)
-                .filter(Stock.symbol == quote["symbol"])
-                .first()
-            )
+        if not symbols:
+            print("No stocks found in database")
+            return
 
-            if stock is None:
-                stock = Stock(
-                    symbol=quote["symbol"],
-                    name=quote["shortName"],
-                    currency=quote["currency"],
-                    market_state=quote["marketState"],
-                    current_price=quote["regularMarketPrice"],
-                    current_change_percent=quote["regularMarketChangePercent"],
-                    price_updated_at=datetime.now(timezone.utc),
+        total_updated = 0
+
+        for i in range(0, len(symbols), 25):
+
+            batch = symbols[i:i + 25]
+
+            quotes = get_formatted_quotes(batch)
+
+            for quote in quotes:
+
+                stock = (
+                    db.query(Stock)
+                    .filter(Stock.symbol == quote["symbol"])
+                    .first()
                 )
 
-                db.add(stock)
+                if stock is None:
+                    continue
 
-            else:
                 stock.current_price = quote["regularMarketPrice"]
                 stock.current_change_percent = quote["regularMarketChangePercent"]
                 stock.price_updated_at = datetime.now(timezone.utc)
 
+                total_updated += 1
+
         db.commit()
 
-        print(f"Successfully updated current prices for {len(quotes)} stocks")
+        print(f"Successfully updated current prices for {total_updated} stocks")
 
     except Exception:
         db.rollback()
