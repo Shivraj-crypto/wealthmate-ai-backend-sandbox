@@ -67,43 +67,47 @@ def ingest_historical_prices():
             print("No stocks found in database")
             return
 
+        stocks = (
+            db.query(Stock)
+            .filter(Stock.symbol.in_(symbols))
+            .all()
+        )
+
+        stock_map = {
+            stock.symbol: stock
+            for stock in stocks
+        }
+
         total_updated = 0
 
-        for symbol in symbols:
+        for i in range(0, len(symbols), 25):
 
-            stock = (
-                db.query(Stock)
-                .filter(Stock.symbol == symbol)
-                .first()
-            )
+            batch = symbols[i:i + 25]
 
-            if stock is None:
-                continue
-
-            # Get 1D historical price data
+            # 1D → 5m
             historical_prices_1d = get_historical_prices(
-                symbol,
+                batch,
                 period="1d",
                 interval="5m"
             )
 
-            # Get 1W historical price data
+            # 1W → 1h
             historical_prices_1w = get_historical_prices(
-                symbol,
+                batch,
                 period="5d",
                 interval="1h"
             )
 
-            # Get 1Y historical price data
+            # 1M / 3M / 1Y → 1d
             historical_prices_1y = get_historical_prices(
-                symbol,
+                batch,
                 period="1y",
                 interval="1d"
             )
 
-            # Get 5Y historical price data
+            # 5Y → 1wk
             historical_prices_5y = get_historical_prices(
-                symbol,
+                batch,
                 period="5y",
                 interval="1wk"
             )
@@ -116,6 +120,13 @@ def ingest_historical_prices():
             )
 
             for historical_price in historical_prices:
+
+                stock = stock_map.get(
+                    historical_price["symbol"]
+                )
+
+                if stock is None:
+                    continue
 
                 existing = (
                     db.query(HistoricalPrice)
@@ -151,7 +162,8 @@ def ingest_historical_prices():
         db.commit()
 
         print(
-            f"Successfully updated historical prices: {total_updated} new records"
+            f"Successfully updated historical prices: "
+            f"{total_updated} new records"
         )
 
     except Exception:

@@ -1,10 +1,9 @@
+from datetime import datetime, timezone
+
 import re
 
 from fastapi import HTTPException
 from yahooquery import Ticker
-from ..database import *
-from datetime import datetime, timezone
-from ..models import Stock, HistoricalPrice
 
 
 def normalize_symbols(symbols):
@@ -39,44 +38,11 @@ def normalize_symbols(symbols):
     return cleaned_symbols
 
 
-def format_quote(quote):
-
-    return {
-        "symbol": quote.get("symbol"),
-        "shortName": quote.get("shortName"),
-        "regularMarketPrice": quote.get("regularMarketPrice"),
-        "regularMarketChangePercent": quote.get(
-            "regularMarketChangePercent"
-        ),
-        "currency": quote.get("currency"),
-        "marketState": quote.get("marketState"),
-    }
-
-
-def get_formatted_quotes(symbols):
+def get_historical_prices(symbols, period="1d", interval="5m"):
 
     symbols = normalize_symbols(symbols)
 
     ticker = Ticker(symbols)
-    data = ticker.price
-
-    if not isinstance(data, dict):
-        return []
-
-    results = []
-
-    for symbol in symbols:
-        quote = data.get(symbol)
-
-        if quote:
-            quote["symbol"] = symbol
-            results.append(format_quote(quote))
-
-    return results
-
-def get_historical_prices(symbol, period="1d", interval="5m"):
-
-    ticker = Ticker(symbol)
 
     data = ticker.history(
         period=period,
@@ -90,20 +56,20 @@ def get_historical_prices(symbol, period="1d", interval="5m"):
 
     for _, row in data.iterrows():
 
+        symbol = row.name[0]
         recorded_at = row.name[1]
 
         if hasattr(recorded_at, "to_pydatetime"):
             recorded_at = recorded_at.to_pydatetime()
 
-        if isinstance(recorded_at, datetime):
-            if recorded_at.tzinfo is None:
-                recorded_at = recorded_at.replace(
-                    tzinfo=timezone.utc
-                )
-        else:
+        if not isinstance(recorded_at, datetime):
             recorded_at = datetime.combine(
                 recorded_at,
-                datetime.min.time(),
+                datetime.min.time()
+            )
+
+        if recorded_at.tzinfo is None:
+            recorded_at = recorded_at.replace(
                 tzinfo=timezone.utc
             )
 
@@ -115,7 +81,3 @@ def get_historical_prices(symbol, period="1d", interval="5m"):
         })
 
     return results
-
-
-if __name__ == "__main__":
-    pass
