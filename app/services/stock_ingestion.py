@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from ..database import SessionLocal
 from ..models import Stock, HistoricalPrice
 from .yahoo_service import get_formatted_quotes, get_historical_prices
+from ..services.stock_symbols import get_stock_symbols
 
 
 SYMBOLS = ["AAPL", "GOOG", "MSFT"]
