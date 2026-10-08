@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -79,28 +79,28 @@ def ingest_historical_prices():
             if stock is None:
                 continue
 
-            # 1D → 5m
+            # Get 1D historical price data
             historical_prices_1d = get_historical_prices(
                 quote["symbol"],
                 period="1d",
                 interval="5m"
             )
 
-            # 1W → 1h
+            # Get 1W historical price data
             historical_prices_1w = get_historical_prices(
                 quote["symbol"],
                 period="5d",
                 interval="1h"
             )
 
-            # 1Y / 3M / 1M → 1d
+            # Get 1Y historical price data
             historical_prices_1y = get_historical_prices(
                 quote["symbol"],
                 period="1y",
                 interval="1d"
             )
 
-            # 5Y → 1wk
+            # Get 5Y historical price data
             historical_prices_5y = get_historical_prices(
                 quote["symbol"],
                 period="5y",
@@ -135,6 +135,15 @@ def ingest_historical_prices():
                     )
 
                     db.add(data)
+
+        # Delete historical data older than 5 years
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=365 * 5)
+
+        db.query(HistoricalPrice).filter(
+            HistoricalPrice.recorded_at < cutoff_date
+        ).delete(
+            synchronize_session=False
+        )
 
         db.commit()
 
