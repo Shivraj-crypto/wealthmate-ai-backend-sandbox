@@ -18,6 +18,7 @@ SYMBOLS = [
     "AVGO",
     "GOOGL",
     "NFLX",
+    'JNJ'
     # we'll expand this to 100+ next
 ]
 

@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
-
 import re
+
+from datetime import datetime, timezone
 
 from fastapi import HTTPException
 from yahooquery import Ticker
@@ -36,6 +36,42 @@ def normalize_symbols(symbols):
             )
 
     return cleaned_symbols
+
+
+def format_quote(quote):
+
+    return {
+        "symbol": quote.get("symbol"),
+        "shortName": quote.get("shortName"),
+        "regularMarketPrice": quote.get("regularMarketPrice"),
+        "regularMarketChangePercent": quote.get(
+            "regularMarketChangePercent"
+        ),
+        "currency": quote.get("currency"),
+        "marketState": quote.get("marketState"),
+    }
+
+
+def get_formatted_quotes(symbols):
+
+    symbols = normalize_symbols(symbols)
+
+    ticker = Ticker(symbols)
+    data = ticker.price
+
+    if not isinstance(data, dict):
+        return []
+
+    results = []
+
+    for symbol in symbols:
+        quote = data.get(symbol)
+
+        if quote:
+            quote["symbol"] = symbol
+            results.append(format_quote(quote))
+
+    return results
 
 
 def get_historical_prices(symbols, period="1d", interval="5m"):
