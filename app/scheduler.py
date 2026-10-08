@@ -1,5 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 
+#APScheduler ingestionJOb every 30 min for each stock and 1 day for historic pprices
+
 from .services.stock_ingestion import (
     ingest_current_prices,
     ingest_historical_prices
