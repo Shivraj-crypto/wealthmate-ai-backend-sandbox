@@ -19,6 +19,7 @@ SYMBOLS = [
     "GOOGL",
     "NFLX",
     'JNJ'
+    'AAL'
     # we'll expand this to 100+ next
 ]
 
