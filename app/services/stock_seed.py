@@ -19,9 +19,7 @@ SYMBOLS = [
     "GOOGL",
     "NFLX",
     'JNJ'
-    'AAL'
-    'ABNB'
-]
+    ]
 
 
 def seed_stocks():
