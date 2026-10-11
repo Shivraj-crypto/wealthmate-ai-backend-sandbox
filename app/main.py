@@ -6,6 +6,7 @@ from . import routes
 from .scheduler import start_scheduler, stop_scheduler
 
 
+#contect_manager_ch
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
