@@ -5,7 +5,7 @@ def cardsway(cards):
 
     max_cards_needed = float('inf')
 
-    for i in range(2, max(cards) + 1):
+    for i in range(2, max(cards) + 2):
 
         extra_cards_needed = 0
 
