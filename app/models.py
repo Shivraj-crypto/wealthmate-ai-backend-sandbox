@@ -1,5 +1,6 @@
 from app.database import Base
 from sqlalchemy import Integer, String, Column, ForeignKey, Float, DateTime, UniqueConstraint
+from sqlalchemy import Text, JSON
 
 
 class Stock(Base):
@@ -32,4 +33,47 @@ class HistoricalPrice(Base):
             "interval",
             name="unique_stock_historical_price"
         ),
+    )
+
+class News(Base):
+    __tablename__ = "news"
+
+    id = Column(Integer, primary_key=True)
+
+    # Massive article ID
+    external_id = Column(String(128), unique=True, nullable=False, index=True)
+
+    title = Column(Text, nullable=False)
+    author = Column(String)
+    description = Column(Text)
+
+    article_url = Column(Text, nullable=False)
+    image_url = Column(Text)
+
+    publisher_name = Column(String)
+    publisher_homepage_url = Column(Text)
+    publisher_logo_url = Column(Text)
+    publisher_favicon_url = Column(Text)
+
+    published_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    fetched_at = Column(DateTime(timezone=True), nullable=False)
+
+    tickers = Column(JSON, default=list)
+    keywords = Column(JSON, default=list)
+    insights = Column(JSON, default=list)
+
+
+class NewsStock(Base):
+    __tablename__ = "news_stocks"
+
+    news_id = Column(
+        Integer,
+        ForeignKey("news.id", ondelete="CASCADE"),
+        primary_key=True
+    )
+
+    stock_id = Column(
+        Integer,
+        ForeignKey("stocks.id", ondelete="CASCADE"),
+        primary_key=True
     )
