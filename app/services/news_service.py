@@ -4,7 +4,7 @@ import httpx
 
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
-
+import json
 
 load_dotenv()
 
@@ -55,9 +55,4 @@ if __name__ == "__main__":
 
     print(f"Fetched {len(articles)} articles")
 
-    for article in articles[:5]:
-        print(
-            article.get("published_utc"),
-            article.get("publisher", {}).get("name"),
-            article.get("title")
-        )
+    print(json.dumps(articles[0], indent=4))
