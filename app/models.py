@@ -1,6 +1,7 @@
 from app.database import Base
 from sqlalchemy import Integer, String, Column, ForeignKey, Float, DateTime, UniqueConstraint
 from sqlalchemy import Text, JSON
+from .stock_symbols import get_stock_symbols
 
 
 class Stock(Base):
