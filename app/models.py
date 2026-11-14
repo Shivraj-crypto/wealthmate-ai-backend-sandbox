@@ -1,8 +1,61 @@
-from app.database import Base
-from sqlalchemy import Integer, String, Column, ForeignKey, Float, DateTime, UniqueConstraint
-from sqlalchemy import Text, JSON
-from .stock_symbols import get_stock_symbols
 
+from app.database import Base
+
+from sqlalchemy import (
+    Integer,
+    String,
+    Column,
+    ForeignKey,
+    Float,
+    DateTime,
+    UniqueConstraint,
+    Index,
+    func,
+    Text,
+    JSON
+)
+
+
+# 1. MASTER ASSETS TABLE
+
+class Asset(Base):
+    __tablename__ = "assets"
+
+    id = Column(Integer, primary_key=True)
+
+    symbol = Column(String(50), nullable=False)
+    name = Column(String(200), nullable=False)
+
+    category = Column(String(30), nullable=False)
+    market = Column(String(10), nullable=False)
+    exchange = Column(String(50), nullable=False, default="UNKNOWN")
+    currency = Column(String(10), nullable=False)
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now()
+    )
+
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "symbol",
+            "market",
+            "exchange",
+            name="unique_asset_symbol_market_exchange"
+        ),
+        Index("ix_assets_market_category", "market", "category"),
+    )
+
+
+# 2. STOCKS
 
 class Stock(Base):
     __tablename__ = "stocks"
@@ -17,6 +70,8 @@ class Stock(Base):
     current_change_percent = Column(Float)
     price_updated_at = Column(DateTime, nullable=False)
 
+
+# 3. HISTORICAL PRICES
 
 class HistoricalPrice(Base):
     __tablename__ = "historical_prices"
@@ -36,12 +91,14 @@ class HistoricalPrice(Base):
         ),
     )
 
+
+# 4. NEWS
+
 class News(Base):
     __tablename__ = "news"
 
     id = Column(Integer, primary_key=True)
 
-    # Massive article ID
     external_id = Column(String(128), unique=True, nullable=False, index=True)
 
     title = Column(Text, nullable=False)
@@ -63,6 +120,8 @@ class News(Base):
     keywords = Column(JSON, default=list)
     insights = Column(JSON, default=list)
 
+
+# 5. NEWS STOCKS JUNCTION TABLE
 
 class NewsStock(Base):
     __tablename__ = "news_stocks"
